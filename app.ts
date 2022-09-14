@@ -7,6 +7,7 @@ import { APPCONFIG } from "./interfaces/appconfig";
 import { Environment } from "./interfaces/environment";
 import { Vault } from "./databases/vault";
 import { Sentry } from "./server/sentry";
+import * as socketio from 'socket.io'
 
 import { LogLevel } from "@sentry/types";
 import * as ip from 'ip';
@@ -39,7 +40,7 @@ global.__rootdir__ = process.cwd();
 export class Application {
     public static conf: APPCONFIG;
     public static started: boolean = false;
-
+    public static io: socketio.Server;
     private httpServer!: HTTPServer;
     constructor() { }
     public async INIT(env: Environment) {

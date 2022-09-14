@@ -8,7 +8,7 @@
         "AllowCors": false,
         "GracefullShutdown": true,
         "VAULT": false,
-        "ServiceName": "Farhan",
+        "ServiceName": "",
         "QUEUE": false
     },
     "vault": {

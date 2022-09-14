@@ -4,6 +4,8 @@ import express from "express";
 //Config Imports
 import { HTTPCONF } from "../configs/http";
 import { CorsConfig } from "../configs/cors";
+import { SocketClass } from "../controllers/api/chat";
+import * as socketio from 'socket.io'
 
 //Global Router Imports
 import * as Middleware from "../controllers/global/middleware"
@@ -26,6 +28,7 @@ export class HTTPServer {
     public static server: HTTPServer;
     public static conf: HTTPCONF;
     private app: any;
+    public static io: socketio.Server;
     private httpServer!: http.Server & stoppable.WithStop
 
     private constructor(conf: HTTPCONF) {
@@ -37,8 +40,11 @@ export class HTTPServer {
             HTTPServer.conf = conf;
             HTTPServer.server = new HTTPServer(conf);
             HTTPServer.RegisterRouter();
-            HTTPServer.StartServer(conf.PORT);
+            let s = HTTPServer.StartServer(conf.PORT);
+            
+            SocketClass.SocketConnection(s)
             return HTTPServer.server;
+            
         } else return HTTPServer.server;
     }
 
@@ -81,16 +87,21 @@ export class HTTPServer {
 
     static StartServer(port: number) {
         this.server.httpServer = stoppable(this.server.app.listen(port, () => { console.log(`Server Started on Port : ${port}`); }))
+    
         this.server.httpServer.on('close', () => {
             console.log('Server Close Fired');
             process.exit(1);
 
+
         })
+
+        return this.server.httpServer;
     }
 
     static async StopServer() {
         console.log('Stopping Server');
         try {
+            HTTPServer.io.disconnectSockets(true)
             if (!this.server) process.exit(1);
             this.server.httpServer.close();
 

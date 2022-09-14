@@ -24,6 +24,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.HTTPServer = void 0;
 const express_1 = __importDefault(require("express"));
+const chat_1 = require("../controllers/api/chat");
 //Global Router Imports
 const Middleware = __importStar(require("../controllers/global/middleware"));
 const AssetRouter = __importStar(require("../controllers/global/assets"));
@@ -36,14 +37,15 @@ const stoppable_1 = __importDefault(require("stoppable"));
 const sentry_1 = require("./sentry");
 class HTTPServer {
     constructor(conf) {
-        this.app = (0, express_1.default)();
+        this.app = express_1.default();
     }
     static INIT(conf) {
         if (!HTTPServer.server) {
             HTTPServer.conf = conf;
             HTTPServer.server = new HTTPServer(conf);
             HTTPServer.RegisterRouter();
-            HTTPServer.StartServer(conf.PORT);
+            let s = HTTPServer.StartServer(conf.PORT);
+            chat_1.SocketClass.SocketConnection(s);
             return HTTPServer.server;
         }
         else
@@ -71,15 +73,17 @@ class HTTPServer {
         this.server.app.use('/', DefaultRouter.router);
     }
     static StartServer(port) {
-        this.server.httpServer = (0, stoppable_1.default)(this.server.app.listen(port, () => { console.log(`Server Started on Port : ${port}`); }));
+        this.server.httpServer = stoppable_1.default(this.server.app.listen(port, () => { console.log(`Server Started on Port : ${port}`); }));
         this.server.httpServer.on('close', () => {
             console.log('Server Close Fired');
             process.exit(1);
         });
+        return this.server.httpServer;
     }
     static async StopServer() {
         console.log('Stopping Server');
         try {
+            HTTPServer.io.disconnectSockets(true);
             if (!this.server)
                 process.exit(1);
             this.server.httpServer.close();
